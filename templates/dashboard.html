@@ -20,13 +20,15 @@
             border: 1px solid black;
         }
 
-        #add-container {
+        .hidden {
             display: none;
+            border: 1px solid red;
         }
 
-        #update-container {
-            display: none;
+        .visible {
+            display: block;
         }
+
     </style>
     <title>Dashboard</title>
 </head>
@@ -44,10 +46,11 @@
                     <th>Original Quantity</th>
                     <th>Current Quantity</th>
                     <th>Rate</th>
-                    <th>Modification Date</th>
+                    <th>Restocking Date</th>
+                    <th>Last Modification Date</th>
                 </tr>
                 {% for index in range(tableContents[(tableContents.keys()|list)[0]]|length) %}
-                    <tr onclick="update_qty()">
+                    <tr>
                         {% for attribute in tableContents.keys() %}
                             <td>{{ tableContents[attribute][index] }}</td>
                         {% endfor %}
@@ -61,16 +64,22 @@
 
     <div id="modification-container">
         <button class="modification-btn" onclick="reveal_addition_wizard()">Add</button>
-        <div id="add-container">
+        <div id="add-container" class="hidden">
             <input type="text" placeholder="Commodity ID">
             <input type="text" placeholder="Commodity name">
             <input type="text" placeholder="Quantity">
             <input type="text" placeholder="Rate">
             <button onclick="verify_and_insert_to_table()" class="modification-btn">Save</button>
         </div>
+
         <button class="modification-btn">Remove</button>
+        <div id="remove-container" class="hidden">
+            <input type="text" placeholder="Commodity ID">
+            <button onclick="remove_item()" class="modification-btn">Remove</button>
+        </div>
+
         <button class="modification-btn" onclick="reveal_updation_wizard()">Update</button>
-        <div id="update-container">
+        <div id="update-container" class="hidden">
             <input type="text" placeholder="Commodity ID">
             <input type="text" placeholder="New Quantity">
             <button onclick="update_qty()" class="modification-btn">Save</button>
@@ -84,10 +93,7 @@
         const qtyFormat = /^\d+$/;
         const rateFormat = /^\d+.?\d*$/;
 
-        const addBtn = document.getElementsByClassName('modification-btn')[0];
-        const saveBtn = document.getElementsByClassName('modification-btn')[1];
-        const removeBtn = document.getElementsByClassName('modification-btn')[2];
-        const updateBtn = document.getElementsByClassName('modification-btn')[3];
+        const btns = document.getElementsByTagName('button');
 
         const table = document.getElementById('inventory');
         
@@ -105,6 +111,64 @@
 
         function hide_addition_wizard() {
             document.getElementById('add-container').style.display = 'none';
+        }
+
+        function hide(action, element_id = '') {
+
+            action = action.trim();
+            element_id = element_id.trim();
+
+            const idArray = ['add-container', 'update-container', 'remove-container'];
+
+            if(action === 'SELF-HIDE') {
+                console.log(1);
+                document.getElementById(element_id).classList.add('hidden');
+            }
+            else if(action === 'SELF-REVEAL') {
+                console.log(2);
+                document.getElementById(element_id).classList.remove('hidden');
+
+            }
+            else if(action === 'OTHERS-HIDE') {
+                console.log(3);
+                for(let id of idArray)
+                    if(id != element_id)
+                        document.getElementById(id).classList.add('hidden');
+
+            }
+            else if(action === 'OTHERS-REVEAL') {
+                console.log(4);
+                for(let id of idArray)
+                        if(id != element_id)
+                            document.getElementById(id).classList.remove('hidden');               
+
+            }
+            else if(action === 'ALL-HIDE') {
+                console.log(5);
+                for(let id of idArray)
+                    document.getElementById(id).classList.add('hidden');
+                console.log('lmao');
+            } 
+            else if(action === 'ALL-REVEAL') {
+                console.log(6);
+                for(let id of idArray)
+                    document.getElementById(id).classList.remove('hidden');
+
+            }
+
+
+
+        }
+
+
+        function deactivate_btns() {
+            for (const btn of btns)
+                btn.disabled = true;
+        }
+
+        function activate_btns() {
+            for (const btn of btns)
+                btn.disabled = false;
         }
 
         function verify_and_insert_to_table() {
@@ -127,35 +191,39 @@
             else {
 
                 let dateTime = new Date().toLocaleString();
-                let array = [cid, cname, qty, qty, rate, dateTime];
-                addBtn.disabled = true;
-                removeBtn.disabled = true;
-                saveBtn.disabled = true;
-                updateBtn.disabled = true;
+                let array = [cid, cname, qty, qty, rate, dateTime, '-'];
+                
+                deactivate_btns();
 
                 xhr = new XMLHttpRequest();
-                xhr.open("POST", "/add-commodity", true);
-                xhr.onreadystatechange = () => {
-                    if (xhr.readyState === XMLHttpRequest.DONE) {
-                        alert(xhr.responseText);
-                        addBtn.disabled = false;
-                        removeBtn.disabled = false;
-                        saveBtn.disabled = false;
-                        updateBtn.disabled = false;
-
-                        if(xhr.status === 200) {
-                            let row = table.insertRow(-1);
-
-                            for(let cell = 0; cell < 6; ++cell) {
-                                let newCell = row.insertCell(cell);
-                                newCell.innerHTML = array[cell];
-                            }
-                        }
-                        hide_addition_wizard();
-                    }
-                }
+                xhr.open("POST", "/add-commodity", false);
+                // xhr.onreadystatechange = () => {
+                //     if (xhr.readyState === XMLHttpRequest.DONE) {
+                        
+                //         if(xhr.status === 200) {
+                //             location.reload();
+                //         }
+                //         else {
+                //             alert(xhr.responseText);
+                //             // hide_addition_wizard();
+                //             hide('add-container', 'ALL-HIDE');
+                //             activate_btns();
+                //         }
+                //     }
+                // }
                 xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-                xhr.send(`cid=${cid}&cname=${cname}&oqty=${qty}&cqty=${qty}&rate=${rate}&date=${dateTime}`);
+                xhr.send(`cid=${cid}&cname=${cname}&oqty=${qty}&cqty=${qty}&rate=${rate}&date=${dateTime}&date_mdf=-`);
+                if(xhr.status === 200) {
+                    location.reload();
+                }
+                else {
+                    alert(xhr.responseText);
+                    // hide_addition_wizard();
+                    hide('ALL-HIDE');
+                    activate_btns();
+                }
+    
+                
             }
 
         }
@@ -171,7 +239,39 @@
 
             if(!allGood) alert('Detail(s) entered in wrong format.');
             else {
+
+                let dateTime = new Date().toLocaleString();
+
+                deactivate_btns();
+
+                xhr = new XMLHttpRequest();
+                xhr.open("POST", "/update-commodity", false);
+                // xhr.onreadystatechange = () => {
+                //     if (xhr.readyState === XMLHttpRequest.DONE) {
                 
+                //         if(xhr.status === 200) {
+                //             location.reload();
+                //         }
+                //         else {
+                //             alert(xhr.responseText);
+                //             // hide_addition_wizard();
+                //             hide('ALL-HIDE');
+                //             activate_btns();
+                //         }
+                //     }
+                // }
+                xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+                xhr.send(`cid=${targetCommodity}&qty=${newQty}&date=${dateTime}`);
+
+                if(xhr.status === 200) {
+                    location.reload();
+                }
+                else {
+                    alert(xhr.responseText);
+                    // hide_addition_wizard();
+                    hide('ALL-HIDE');
+                    activate_btns();
+                }
             }
             
 

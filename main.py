@@ -8,7 +8,7 @@ print('entering flask')
 app = Flask(__name__)
 app.secret_key = 'temp string. tolerate this for now pls.'
 
-FIELDS = ['cid', 'cname', 'oqty', 'cqty', 'rate', 'date']
+FIELDS = ['cid', 'cname', 'oqty', 'cqty', 'rate', 'date', 'date_mdf']
 
 
 @app.route('/')
@@ -145,7 +145,7 @@ def add_commodity():
         tableContents = loads(tableContents[0][0])
 
     if details.get('cid') in list(tableContents.values())[0]:
-        return 'Such an item already exists.', 403
+        return f"Item {details.get('cid')} already exists.", 400
 
     for key, value in tableContents.items():
         value.append(details.get(key))
@@ -160,12 +160,57 @@ def add_commodity():
         add_details_to_db(session.get('username'), details_json)
     except Exception as exception:
         print(exception)
-        return 'Something went wrong, try again', 400
+        return 'Something went wrong, try again', 403
     else:
         return 'Details Added.', 200
         # return redirect(url_for('login_check'), code = 307)
 
     return 'add req rcvd'
+
+
+@app.route('/update-commodity', methods = ['POST'])
+def update_commodity():
+    details = request.form.to_dict()
+    tableContents = fetch_table_contents(session.get('username'))
+
+    cid = details.get('cid')
+    qty = details.get('qty')
+    date = details.get('date')
+
+
+    if tableContents[0][0] is None:
+        return 'The inventory is empty.', 403
+    else:
+        tableContents = loads(tableContents[0][0])
+
+        try:
+            tgtIndex = tableContents.get('cid').index(cid)
+        except ValueError:
+            return f'Item with code {cid} doesn\'t exist', 403
+        else:
+            if qty > tableContents.get('cqty')[tgtIndex]:
+                tableContents.get('oqty')[tgtIndex] = qty
+                tableContents.get('date')[tgtIndex] = date
+            else:
+                tableContents.get('date_mdf')[tgtIndex] = date
+
+
+            tableContents.get('cqty')[tgtIndex] = qty
+
+
+            tableContents = dumps(tableContents)
+
+            try:
+                add_details_to_db(session.get('username'), tableContents)
+            except Exception as exception:
+                print(exception)
+                return 'Something went wrong, try again', 403
+            else:
+                return 'Details Updated.', 200
+            return 'Updated', 200
+
+    return 'Huh?', 403
+
 
 
 
