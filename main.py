@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 from database_handlers import *
-from ibm_db_dbi import IntegrityError, ProgrammingError
+from ibm_db_dbi import IntegrityError
 from json import loads, dumps
 
 
@@ -9,6 +9,12 @@ app = Flask(__name__)
 app.secret_key = 'temp string. tolerate this for now pls.'
 
 FIELDS = ['cid', 'cname', 'oqty', 'cqty', 'rate', 'date', 'date_mdf']
+
+
+@app.after_request
+def after_request(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return response
 
 
 @app.route('/')
@@ -213,6 +219,40 @@ def update_commodity():
 
 
 
+@app.route('/remove-commodity', methods = ['POST'])
+def remove_commodity():
+    details = request.form.to_dict()
+    tableContents = fetch_table_contents(session.get('username'))
+
+    cid = details.get('cid')
+
+    if tableContents[0][0] is None:
+        return 'The inventory is empty.', 403
+    else:
+        tableContents = loads(tableContents[0][0])
+
+        try:
+            tgtIndex = tableContents.get('cid').index(cid)
+        except ValueError:
+            return f'Item with code {cid} doesn\'t exist', 403
+        else:
+            for key, value in tableContents.items():
+                value.pop(tgtIndex)
+        tableContents = dumps(tableContents)
+
+        try:
+            add_details_to_db(session.get('username'), tableContents)
+        except Exception as exception:
+            print(exception)
+            return 'Something went wrong, try again', 403
+        else:
+            return f'Item {cid} removed.', 200
+
+
+@app.route('/logout')
+def logout():
+    session.pop('username')
+    return redirect(url_for('login_initial'))
 
 
 

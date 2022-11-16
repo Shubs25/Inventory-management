@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');  /* great vibes */
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Slab&display=swap'); /* josefin */
+
+
+* {
+    font-family: 'Josefin Slab', serif;
+}
+
+#nav {
+    width: 100vw;
+    height: 10vh;
+    background-color: rgb(206, 233, 243);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#nav span {
+    font-family: 'Great Vibes', cursive;
+}
+
+#nav span a {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+#table-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px;
+}
+
+#inventory {
+    width: 100%;
+    border: 1px solid black;
+}
+
+#inventory * {
+    border: 1px solid black;
+}
+
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}
+
+#modification-container {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin: 20px;
+}
+
+
+.modification-btn {
+    border: none;
+    background-color: rgb(196, 221, 255);
+    border-radius: 5px;
+    transition: all 0.5s;
+    font-size: large;
+}
+
+.modification-btn:hover {
+    background-color: rgb(211, 196, 255);
+}
+
+.outer-container {
+    margin: 10px;
+    padding: 5px;
+    border: 1px solid rgb(243, 212, 212);
+    border-radius: 5px;
+    background-color: rgb(243, 235, 241);
+}
+
