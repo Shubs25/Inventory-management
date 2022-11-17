@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from database_handlers import *
 from ibm_db_dbi import IntegrityError
 from json import loads, dumps
+from hashlib import sha256
+from mail import sendgrid_email
 
 
 print('entering flask')
@@ -37,13 +39,16 @@ def login_check():
     username = request.form['uname'].rstrip().rstrip()
     entered_password = request.form['password']
 
+    hash_object = sha256(entered_password.encode())
+    hashed_entered_password = hash_object.hexdigest()
+
     # get the expected password corresponding to the username
     expected_password = fetch_password(username)
 
     if not expected_password:
         # if expected password is not found in the database, it means no such account is registered yet.
         return render_template('login.html', err_msg = 'Register an account first!')
-    elif entered_password != expected_password:
+    elif hashed_entered_password != expected_password:
         # if the entered and expected password don't match, it means the password entered is wrong.
         return render_template('login.html', err_msg = 'Wrong username or password')
     else:
@@ -81,12 +86,15 @@ def signup():
     fullName = request.form.get('fname').lstrip().rstrip()
     username = request.form.get('uname').lstrip().rstrip()
     email = request.form.get('email').lstrip().rstrip()
-    password = request.form.get('password').lstrip().rstrip()
+    password = request.form.get('password')
     mobile = request.form.get('mobile').lstrip().rstrip()
+
+    hash_object = sha256(password.encode())
+    hashed_password = hash_object.hexdigest()
 
     try:
         # try to create account with the given details
-        create_account(fullName, username, email, password, mobile)
+        create_account(fullName, username, email, hashed_password, mobile)
     except IntegrityError:
         # integrity error means either NOT NULL or UNIQUE constraint has been violated.
         # the former being highly unlikely because of the validation checks in the front end.
@@ -184,6 +192,7 @@ def update_commodity():
     date = details.get('date')
 
 
+
     if tableContents[0][0] is None:
         return 'The inventory is empty.', 403
     else:
@@ -194,6 +203,13 @@ def update_commodity():
         except ValueError:
             return f'Item with code {cid} doesn\'t exist', 403
         else:
+            if qty == '0' or qty == 0:
+                try:
+                    sendgrid_email('Restocking Reminder!', f'Item {cid} has run out, you should probably restock it',
+                                   'abc@def.com')
+                except Exception as e:
+                    print(f'Something went wrong --> {e}')
+
             if qty > tableContents.get('cqty')[tgtIndex]:
                 tableContents.get('oqty')[tgtIndex] = qty
                 tableContents.get('date')[tgtIndex] = date

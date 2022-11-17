@@ -32,7 +32,7 @@ def create_table():
                     name varchar(30),
                     username varchar(15) not null unique,
                     email varchar(35) not null unique,
-                    password varchar(20),
+                    password varchar(100),
                     mobile varchar(12),
                     contents clob
                                 );'''
