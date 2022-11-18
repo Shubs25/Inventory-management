@@ -210,7 +210,7 @@ def update_commodity():
                 except Exception as e:
                     print(f'Something went wrong --> {e}')
 
-            if qty > tableContents.get('cqty')[tgtIndex]:
+            if int(qty) > int(tableContents.get('cqty')[tgtIndex]):
                 tableContents.get('oqty')[tgtIndex] = qty
                 tableContents.get('date')[tgtIndex] = date
             else:
