@@ -1,27 +1,5 @@
+import ibm_db_dbi
 import ibm_db_dbi as db
-
-
-print('[CONNECTING]')
-conn = db.connect("DATABASE=bludb;"
-                      "HOSTNAME=0c77d6f2-5da9-48a9-81f8-86b520b87518.bs2io90l08kqb1od8lcg.databases.appdomain.cloud;"
-                      "PORT=31198;"
-                      "PROTOCOL=TCPIP;"
-                      "SECURITY=SSL;"
-                      "SSLServerCertificate=DigiCertGlobalRootCA.crt;"
-                      "UID=rwf19214;"
-                      "PWD=N7tcvzquirvaYxzW;", '', '')
-
-print('[CONNECTED]')
-
-
-def create_account(fullName, username, email, password, mobileNumber):
-
-    cursor = conn.cursor()
-    SQL = f"INSERT INTO users VALUES(?, ?, ?, ?, ?, NULL)"
-    cursor.execute(SQL, [fullName, username, email, password, mobileNumber])
-    print('[INSERTED]')
-    cursor.close()
-    conn.commit()
 
 
 def execute_generic_query(sql, *params):
@@ -47,6 +25,49 @@ def execute_generic_query(sql, *params):
         cursor.close()
 
     return rows
+
+
+def create_table():
+    SQL = '''create table users (
+                    name varchar(30),
+                    username varchar(15) not null unique,
+                    email varchar(35) not null unique,
+                    password varchar(100),
+                    mobile varchar(12),
+                    contents clob
+                                );'''
+
+    try:
+        execute_generic_query(SQL)
+    except ibm_db_dbi.ProgrammingError as exception:
+        print(exception)
+        print('The table exists already')
+
+
+print('[CONNECTING]')
+conn = db.connect("DATABASE=bludb;"
+                      "HOSTNAME=0c77d6f2-5da9-48a9-81f8-86b520b87518.bs2io90l08kqb1od8lcg.databases.appdomain.cloud;"
+                      "PORT=31198;"
+                      "PROTOCOL=TCPIP;"
+                      "SECURITY=SSL;"
+                      "SSLServerCertificate=DigiCertGlobalRootCA.crt;"
+                      "UID=rwf19214;"
+                      "PWD=N7tcvzquirvaYxzW;", '', '')
+
+create_table()
+print('[CONNECTED]')
+
+
+def create_account(fullName, username, email, password, mobileNumber):
+
+    cursor = conn.cursor()
+    SQL = f"INSERT INTO users VALUES(?, ?, ?, ?, ?, NULL)"
+    cursor.execute(SQL, [fullName, username, email, password, mobileNumber])
+    print('[INSERTED]')
+    cursor.close()
+    conn.commit()
+
+
 
 
 def check_username_existence(value):
@@ -89,61 +110,7 @@ def add_details_to_db(username, details):
 
 
 
-'''
-def view_all_entries():
-    execute_generic_query('SELECT * FROM users')
-
-
-def view_names():
-    execute_generic_query('SELECT name FROM users')
-
-
-def view_usernames():
-    execute_generic_query('SELECT username FROM users')
-
-
-def view_passwords():
-    execute_generic_query('SELECT password FROM users')
-
-
-def view_emails():
-    execute_generic_query('SELECT email FROM users')
-
-
-def view_mobiles():
-    execute_generic_query('SELECT mobile FROM users')
-
-
-def view_table_layout():
-    # You cannot describe a table for some reason.
-    return
-
-    # Useless junk below
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM SYSIBM.COLUMNS WHERE TABLE_NAME = 'users'")
-    rows = cursor.fetchall()
-    for row in rows:
-        print(row)
-    cursor.close()
-'''
-
 def main():
-    # view_all_entries()
-    # view_table_layout()
-    '''
-    functions = [
-        view_names,
-        view_usernames,
-        view_emails,
-        view_passwords,
-        view_mobiles
-        ]
-
-    for function in functions:
-        print('*'*15)
-        function()
-    '''
-
     print('[EXIT-MAIN]')
 
 
